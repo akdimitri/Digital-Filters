@@ -31,35 +31,46 @@ function [y, e, wo, wt] = noiseCancellation( u, d, m, mu, ws )
   wo = zeros( m, 1 );
   wt = zeros( m, n );
   
-   %Calculate Autocorrelation u = Ruu
-    U = toeplitz( [u; zeros(1,m-1).'], [u(1) zeros(1, m-1)]);
-    R_uu = U'*U/n;
-
-    %Calculate Cross Correlation u and d
-    d_temp = [d; zeros(m-1,1)];
-    p_ud = U'*d_temp / n;
+  %% 1. Toeplitz Method
+  % Calculate Autocorrelation
+  %U = toeplitz( [u; zeros(1,m-1).'], [u(1) zeros(1, m-1)]);
+  %R_matrix = U'*U/n;
 
 
-    %Wiener Solution 
-    %wo = R_uu \ p_ud;
-
-
-    wt = ws;
-    wo = ws;
-    for k=2:n % Iterate 1000 times the adaptation step
-        wo = wo +mu *(p_ud-R_uu*wo); % Adaptation Equation ! Quite simple!
-        wt =[wt wo]; % Wt records the evolution of vector W
-    end 
+  %Calculate Cross Correlation u and d
+  %d_temp = [d; zeros(m-1,1)];
+  %p = U'*d_temp / n;
+  
+  %% 2. Xcorr Method
+  % Calculate Autocorrelation using xcorr
+  R_vector_xcorr = xcorr(u);
+  median = (ceil((2*n-1)/2));
+  R_vector_xcorr = R_vector_xcorr(median:( median + m-1));
+  R_matrix_xcorr = toeplitz(R_vector_xcorr)/n;
+  
+  % Calculate cross-correlation using xcorr
+  p_xcorr = xcorr(d, u);
+  p_xcorr = p_xcorr(median:(median+m-1))/n;
+%%  
+  R_matrix = R_matrix_xcorr;
+  p = p_xcorr;
     
-    T = zeros(n,m);
-    T(:,1) = u;
-    for i = 2:m
-        T(i:n,i) = u(1:n - i+1);
-    end
-    
-    y = T*wo;
-
-    e = d - y;
+  w = ws;
+  wt = ws;
+  for( i = 2: n)
+      w = w + mu*( p - R_matrix*w);
+      wt = [wt w];
+  end
+  
+  wo = w;
+  u = [u; zeros(m,1)];
+  
+  for i= m:n
+      y(i) = wo'*u(i:-1:(i-m+1));
+      e(i) = d(i) - y(i);
+  end
+  
+  
 end
 
 
