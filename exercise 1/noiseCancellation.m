@@ -72,13 +72,3 @@ function [y, e, wo, wt] = noiseCancellation( u, d, m, mu, ws )
   
   
 end
-
-
-% AUTHORS
-%
-%   Dimitris Floros                         fcdimitr@auth.gr
-%
-% VERSION
-%
-%   0.1 - March 15, 2019
-%
